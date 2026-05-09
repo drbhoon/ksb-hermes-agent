@@ -6,15 +6,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends git \
 
 WORKDIR /build
 
-# Clone the official source at latest main
 RUN git clone --depth 1 https://github.com/NousResearch/hermes-agent.git .
 
-# Install web deps and build (outputs to web/dist/)
-RUN npm --prefix web ci --prefer-offline --no-audit \
-    && cd web && npm run build
+# Replicate the official npm install sequence (root first, then web/)
+# npm_config_install_links=false matches the official Dockerfile flag
+ENV npm_config_install_links=false
+RUN npm install --prefer-offline --no-audit
+RUN cd web && npm install --prefer-offline --no-audit
 
-# Place built assets where setuptools package-data expects them
-RUN cp -r web/dist hermes_cli/web_dist
+# Build — vite.config.ts sets outDir: "../hermes_cli/web_dist"
+# so the compiled assets land at /build/hermes_cli/web_dist/ directly.
+# No cp step needed.
+RUN cd web && npm run build
 
 
 # ── Stage 2: Python runtime ───────────────────────────────────────────────────
@@ -28,10 +31,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy source tree (with built frontend) from stage 1
+# Copy source tree with built web assets from stage 1
 COPY --from=frontend-builder /build /opt/hermes-src
 
-# Install Python package from local source so web_dist is included
+# Install from local source so package-data picks up hermes_cli/web_dist/
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir /opt/hermes-src \
     && rm -rf /opt/hermes-src
