@@ -64,6 +64,20 @@ export PORT
 envsubst '${PORT}' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf
 rm -f /etc/nginx/sites-enabled/default 2>/dev/null || true
 
+# ── Write gateway allow-all into .env ────────────────────────────────────────
+# Without this the gateway denies every user ("No user allowlists configured")
+if grep -q "^GATEWAY_ALLOW_ALL_USERS=" "${HERMES_HOME}/.env" 2>/dev/null; then
+    sed -i "s|^GATEWAY_ALLOW_ALL_USERS=.*|GATEWAY_ALLOW_ALL_USERS=true|" "${HERMES_HOME}/.env"
+else
+    echo "GATEWAY_ALLOW_ALL_USERS=true" >> "${HERMES_HOME}/.env"
+fi
+
+# ── Start hermes gateway (required for conversations) ────────────────────────
+echo "Starting hermes gateway..."
+hermes gateway run 2>&1 &
+GATEWAY_PID=$!
+sleep 3
+
 # ── Start hermes dashboard ────────────────────────────────────────────────────
 # --insecure disables hermes' own session-token auth layer so users only
 # see the nginx basic-auth prompt (HERMES_PASSWORD). nginx still protects
@@ -88,7 +102,7 @@ done
 
 # ── nginx foreground ──────────────────────────────────────────────────────────
 cleanup() {
-    kill "${DASHBOARD_PID}" 2>/dev/null || true
+    kill "${DASHBOARD_PID}" "${GATEWAY_PID}" 2>/dev/null || true
     nginx -s quit 2>/dev/null || true
 }
 trap cleanup SIGTERM SIGINT
