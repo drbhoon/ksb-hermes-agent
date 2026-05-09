@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install hermes-agent directly from the official NousResearch GitHub source
 # (not published to PyPI — must install from git)
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir "git+https://github.com/NousResearch/hermes-agent.git"
+    && pip install --no-cache-dir "hermes-agent[all] @ git+https://github.com/NousResearch/hermes-agent.git"
 
 # Copy runtime files
 COPY start.sh /start.sh
