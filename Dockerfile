@@ -26,7 +26,7 @@ RUN test -f /opt/hermes-src/hermes_cli/web_dist/index.html \
 
 # Install Python package from local source
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir .
+    && pip install --no-cache-dir ".[all]"
 
 COPY start.sh /start.sh
 COPY nginx.conf.template /etc/nginx/nginx.conf.template
