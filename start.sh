@@ -23,6 +23,14 @@ if [ ! -f "${HERMES_HOME}/.env" ]; then
         || touch "${HERMES_HOME}/.env"
 fi
 
+# Inject ANTHROPIC_API_KEY into ~/.hermes/.env on every boot so it is
+# always in sync with the Railway environment variable.
+if grep -q "^ANTHROPIC_API_KEY=" "${HERMES_HOME}/.env" 2>/dev/null; then
+    sed -i "s|^ANTHROPIC_API_KEY=.*|ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}|" "${HERMES_HOME}/.env"
+else
+    echo "ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}" >> "${HERMES_HOME}/.env"
+fi
+
 # ── Pre-configure Anthropic API key + model (skips the setup wizard) ──────────
 echo "Pre-configuring hermes with Anthropic provider..."
 python3 - <<PYEOF
