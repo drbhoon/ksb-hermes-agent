@@ -5,12 +5,6 @@ PORT="${PORT:-8080}"
 HERMES_HOME="${HERMES_HOME:-/data}"
 HERMES_PASSWORD="${HERMES_PASSWORD:?HERMES_PASSWORD env var is required}"
 
-# Resolve the installed web_dist path so hermes can find the built frontend.
-# Vite outputs to hermes_cli/web_dist/ which pip packages into site-packages.
-export HERMES_WEB_DIST
-HERMES_WEB_DIST=$(python3 -c "import hermes_cli, os; print(os.path.join(os.path.dirname(hermes_cli.__file__), 'web_dist'))")
-echo "HERMES_WEB_DIST=${HERMES_WEB_DIST}"
-
 # Ensure data directory exists and is writable
 mkdir -p "${HERMES_HOME}"
 

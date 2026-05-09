@@ -34,10 +34,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy source tree with built web assets from stage 1
 COPY --from=frontend-builder /build /opt/hermes-src
 
-# Install from local source so package-data picks up hermes_cli/web_dist/
+# Install Python package from local source.
+# Keep the source tree — HERMES_WEB_DIST points into it directly,
+# matching the official Docker image's editable-install pattern.
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir /opt/hermes-src \
-    && rm -rf /opt/hermes-src
+    && pip install --no-cache-dir /opt/hermes-src
 
 COPY start.sh /start.sh
 COPY nginx.conf.template /etc/nginx/nginx.conf.template
@@ -46,6 +47,8 @@ RUN chmod +x /start.sh
 
 ENV HERMES_HOME=/data
 ENV PORT=8080
+# Point hermes at the built frontend assets (Vite outDir → hermes_cli/web_dist)
+ENV HERMES_WEB_DIST=/opt/hermes-src/hermes_cli/web_dist
 
 EXPOSE 8080
 
