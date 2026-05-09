@@ -1,0 +1,7 @@
+* text=auto
+
+# Force LF for files that must run in Linux containers
+*.sh text eol=lf
+Dockerfile text eol=lf
+nginx.conf.template text eol=lf
+railway.toml text eol=lf
