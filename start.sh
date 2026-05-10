@@ -7,6 +7,12 @@ HERMES_PASSWORD="${HERMES_PASSWORD:?HERMES_PASSWORD env var is required}"
 ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:?ANTHROPIC_API_KEY env var is required}"
 INSTALL_DIR="/opt/hermes-src"
 
+# ── Safety: disable browser automation tools ─────────────────────────────────
+# Prevents Hermes from launching Playwright/Chromium browser sessions
+export HERMES_DISABLE_BROWSER_TOOLS=1
+export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+export PLAYWRIGHT_BROWSERS_PATH=/dev/null
+
 # ── Bootstrap HERMES_HOME ─────────────────────────────────────────────────────
 mkdir -p "${HERMES_HOME}"/{cron,sessions,logs,hooks,memories,skills,skins,plans,workspace,home}
 
