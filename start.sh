@@ -13,6 +13,12 @@ export HERMES_DISABLE_BROWSER_TOOLS=1
 export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 export PLAYWRIGHT_BROWSERS_PATH=/dev/null
 
+# ── Enable embedded in-browser chat (PTY terminal) ────────────────────────────
+# Activates the /api/pty WebSocket endpoint so the Sessions page can start chats
+export HERMES_DASHBOARD_TUI=1
+# Ensure hermes finds the built ui-tui entry point (pip installs to site-packages)
+export HERMES_TUI_DIR="${HERMES_TUI_DIR:-/opt/hermes-src/ui-tui}"
+
 # ── Bootstrap HERMES_HOME ─────────────────────────────────────────────────────
 mkdir -p "${HERMES_HOME}"/{cron,sessions,logs,hooks,memories,skills,skins,plans,workspace,home}
 

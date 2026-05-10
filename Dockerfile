@@ -24,6 +24,11 @@ RUN cd web && npm install --prefer-offline --no-audit && npm run build
 RUN test -f /opt/hermes-src/hermes_cli/web_dist/index.html \
     || (echo "ERROR: hermes_cli/web_dist/index.html not found — Vite build did not produce output" && exit 1)
 
+# Build the terminal TUI (required for embedded in-browser chat sessions)
+RUN cd ui-tui && npm install --prefer-offline --no-audit && npm run build
+RUN test -f /opt/hermes-src/ui-tui/dist/entry.js \
+    || (echo "ERROR: ui-tui/dist/entry.js not found — TUI build failed" && exit 1)
+
 # Install Python package from local source
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir ".[all]"
@@ -37,6 +42,8 @@ ENV HERMES_HOME=/data
 ENV PORT=8080
 # Point hermes at the Vite-built frontend (matches official image pattern)
 ENV HERMES_WEB_DIST=/opt/hermes-src/hermes_cli/web_dist
+# Point hermes at the built TUI entry point (pip installs to site-packages, not source dir)
+ENV HERMES_TUI_DIR=/opt/hermes-src/ui-tui
 
 WORKDIR /
 
