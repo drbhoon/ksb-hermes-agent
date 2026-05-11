@@ -91,11 +91,19 @@ GATEWAY_PID=$!
 sleep 3
 
 # ── Start hermes dashboard ────────────────────────────────────────────────────
-# --insecure disables hermes' own session-token auth layer so users only
-# see the nginx basic-auth prompt (HERMES_PASSWORD). nginx still protects
-# all external traffic — --insecure only affects the internal 127.0.0.1 binding.
-echo "Starting hermes dashboard on 127.0.0.1:9119..."
-hermes dashboard --host 127.0.0.1 --no-open --insecure 2>&1 &
+# Bind to 0.0.0.0 + --insecure so hermes treats this as a "public bind". This
+# disables both the Host-header DNS-rebinding guard AND the per-WebSocket
+# IP allowlist check (_ws_client_is_allowed). Both checks return False
+# *before* ws.accept(), and Starlette converts pre-accept WS rejections
+# into HTTP 403 — which is the "403 0" we kept seeing in the access log.
+#
+# This is safe because the only port exposed to the outside world is the
+# nginx port (PORT). Port 9119 stays inside the container; binding it to
+# 0.0.0.0 only opens it on the container's loopback + container-internal
+# interfaces, not on the public network. nginx in front still enforces
+# HTTP Basic Auth on all non-WS routes.
+echo "Starting hermes dashboard on 0.0.0.0:9119..."
+hermes dashboard --host 0.0.0.0 --no-open --insecure 2>&1 &
 DASHBOARD_PID=$!
 
 # Wait up to 60 s for port 9119 to open
