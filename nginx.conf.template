@@ -63,20 +63,23 @@ http {
             add_header Content-Type text/plain;
         }
 
-        # Long-lived WebSocket / SSE endpoints — disable proxy buffering so
-        # streamed events flush immediately and the upgrade isn't downgraded
-        # to a plain HTTP GET (which would hit hermes' HTTP auth middleware
-        # and return 401 instead of completing the WebSocket handshake).
+        # Long-lived WebSocket / SSE endpoints.
         #
         # auth_basic is disabled here because browsers do NOT include HTTP
         # Basic Auth credentials on `new WebSocket()` requests — there is no
-        # 401-challenge round trip for WS upgrades. nginx would otherwise
-        # reject every WS handshake with 401/403 before hermes ever sees it.
-        # These endpoints authenticate via `?token=<session-token>` query
-        # param, which hermes' WebSocket handlers validate themselves.
+        # 401-challenge round trip for WS upgrades. These endpoints
+        # authenticate via `?token=<session-token>` in the URL, which
+        # hermes' WebSocket handlers validate against `_SESSION_TOKEN`.
+        #
+        # IMPORTANT: `proxy_pass ...$request_uri` is required because in
+        # regex locations nginx can otherwise drop the query string on the
+        # way to the upstream. Without the token, hermes calls `ws.close()`
+        # before `ws.accept()`, and Starlette converts that pre-accept close
+        # into HTTP 403 with an empty body — matching exactly the symptom
+        # we saw in the nginx access log ("403 0").
         location ~ ^/api/(pty|events|pub|ws)$ {
             auth_basic off;
-            proxy_pass http://127.0.0.1:9119;
+            proxy_pass http://127.0.0.1:9119$request_uri;
             proxy_buffering off;
             proxy_cache off;
         }
