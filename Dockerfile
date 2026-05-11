@@ -8,7 +8,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     nodejs nginx gettext-base tini apache2-utils git \
     && rm -rf /var/lib/apt/lists/*
 
-# Clone the official NousResearch source
+# Clone the official NousResearch source.
+# The ADD line right above bust the Docker layer cache whenever the upstream
+# main branch advances — without it Docker would happily reuse an old git
+# clone layer for months and the agent would be "85 commits behind". The
+# ADD fetches a tiny JSON blob whose content changes on every commit to main.
+ADD https://api.github.com/repos/NousResearch/hermes-agent/commits/main /tmp/hermes-latest-commit.json
 RUN git clone --depth 1 https://github.com/NousResearch/hermes-agent.git /opt/hermes-src
 
 WORKDIR /opt/hermes-src
