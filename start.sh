@@ -65,13 +65,20 @@ cfg['model']['provider'] = os.environ.get('HERMES_INFERENCE_PROVIDER', 'anthropi
 # CRITICAL: cli-config.yaml.example ships with
 #   base_url: "https://openrouter.ai/api/v1"
 # which gets carried over when we copy the template on first boot. With
-# provider=anthropic but base_url=openrouter, hermes sends Anthropic-API
-# model names (e.g. claude-haiku-4-5-20251001) to OpenRouter, which 404s
-# them and the 404 HTML body gets dumped into the chat as the "response".
-# Set the correct Anthropic base_url explicitly so the inheritance can't
-# poison the request URL.
+# provider=anthropic + base_url=openrouter, hermes ships Anthropic model
+# names to OpenRouter, gets 404s, and dumps the HTML page into the chat.
+#
+# We MUST remove base_url entirely for provider=anthropic. Hermes uses
+# the official `anthropic.Anthropic(...)` Python SDK, which appends its
+# own `/v1/messages` path internally. The SDK's built-in default base
+# is "https://api.anthropic.com" — so any value we set here either
+# (a) points to the wrong host (OpenRouter), or (b) duplicates a path
+# segment. Setting `https://api.anthropic.com/v1` produces the disastrous
+# `https://api.anthropic.com/v1/v1/messages` → 404 not_found_error.
+#
+# Letting the SDK use its own default is the correct, safe path.
 if cfg['model']['provider'] == 'anthropic':
-    cfg['model']['base_url'] = 'https://api.anthropic.com/v1'
+    cfg['model'].pop('base_url', None)
 
 with open(config_path, 'w') as f:
     yaml.dump(cfg, f, default_flow_style=False, allow_unicode=True)
