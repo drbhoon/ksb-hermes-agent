@@ -62,10 +62,23 @@ cfg['model']['api_key']  = os.environ['ANTHROPIC_API_KEY']
 cfg['model']['default']  = os.environ.get('HERMES_MODEL', 'claude-haiku-4-5-20251001')
 cfg['model']['provider'] = os.environ.get('HERMES_INFERENCE_PROVIDER', 'anthropic')
 
+# CRITICAL: cli-config.yaml.example ships with
+#   base_url: "https://openrouter.ai/api/v1"
+# which gets carried over when we copy the template on first boot. With
+# provider=anthropic but base_url=openrouter, hermes sends Anthropic-API
+# model names (e.g. claude-haiku-4-5-20251001) to OpenRouter, which 404s
+# them and the 404 HTML body gets dumped into the chat as the "response".
+# Set the correct Anthropic base_url explicitly so the inheritance can't
+# poison the request URL.
+if cfg['model']['provider'] == 'anthropic':
+    cfg['model']['base_url'] = 'https://api.anthropic.com/v1'
+
 with open(config_path, 'w') as f:
     yaml.dump(cfg, f, default_flow_style=False, allow_unicode=True)
 
-print(f"Config written: provider={cfg['model']['provider']} model={cfg['model']['default']}")
+print(f"Config written: provider={cfg['model']['provider']} "
+      f"model={cfg['model']['default']} "
+      f"base_url={cfg['model'].get('base_url', '<default>')}")
 PYEOF
 
 # ── nginx basic auth + config ─────────────────────────────────────────────────
